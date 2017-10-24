@@ -21,10 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import zipkin.Annotation;
-import zipkin.Span;
-import zipkin.internal.Span2;
-import zipkin.internal.Span2Converter;
+import zipkin2.Annotation;
+import zipkin2.Span;
 
 /**
  * LabelExtractor extracts the set of Stackdriver Span labels equivalent to the annotations in a given Zipkin Span.
@@ -57,26 +55,18 @@ public class LabelExtractor {
    * @param zipkinSpan The Zipkin Span
    * @return A map of the Stackdriver span labels equivalent to the Zipkin annotations.
    */
-  public Map<String, String> extract(Span zipkinSpan) {
-    Map<String, String> result = new LinkedHashMap<>();
-    for (Span2 span2 : Span2Converter.fromSpan(zipkinSpan)) {
-      result.putAll(extract(span2));
-    }
-    return result;
-  }
-
-  Map<String, String> extract(Span2 zipkinSpan) { // not exposed until Span2 is a formal type
+  Map<String, String> extract(Span zipkinSpan) {
     Map<String, String> result = new LinkedHashMap<>();
     for (Map.Entry<String, String> tag : zipkinSpan.tags().entrySet()) {
       result.put(getLabelName(tag.getKey()), tag.getValue());
     }
 
     for (Annotation annotation : zipkinSpan.annotations()) {
-      result.put(getLabelName(annotation.value), formatTimestamp(annotation.timestamp));
+      result.put(getLabelName(annotation.value()), formatTimestamp(annotation.timestamp()));
     }
 
-    if (zipkinSpan.localEndpoint() != null && !zipkinSpan.localEndpoint().serviceName.isEmpty()) {
-      result.put(kComponentLabelKey, zipkinSpan.localEndpoint().serviceName);
+    if (zipkinSpan.localEndpoint() != null && !zipkinSpan.localEndpoint().serviceName().isEmpty()) {
+      result.put(kComponentLabelKey, zipkinSpan.localEndpoint().serviceName());
     }
 
     if (zipkinSpan.parentId() == null) {
